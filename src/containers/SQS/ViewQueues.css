@@ -9,3 +9,7 @@
 .ViewQueues .queues p {
   color: #666;
 }
+
+.ViewQueues .queues .clickable {
+  cursor: pointer;
+}

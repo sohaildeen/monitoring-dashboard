@@ -1,5 +1,5 @@
 import React, {Component} from 'react'
-import {PageHeader, ListGroup, ListGroupItem} from "react-bootstrap";
+import {PageHeader, Button, Grid, Row, Col} from "react-bootstrap";
 import './ViewQueues.css';
 import AWS from 'aws-sdk';
 import config from "../../config";
@@ -17,7 +17,10 @@ export default class SqsViewQueues extends Component {
       const results = await this.getQueues();
       console.log(`results = ${JSON.stringify(results)}`)
       this.setState(prevState => ({
-        queues: [...prevState.queues, results]
+        queues: [
+          ...prevState.queues,
+          results
+        ]
       }))
 
     } catch (e) {
@@ -40,20 +43,17 @@ export default class SqsViewQueues extends Component {
         .listQueues(params, function (err, data) {
           if (err) 
             reject(err)
-            console.log("get urls response")
-            console.log(data)
+          console.log("get urls response")
+          console.log(data)
           resolve(data.QueueUrls);
         });
-    }).then(
-      (urls)=>{
-        var params = {
-          QueueUrl: urls[0], /* required */
-          AttributeNames: [
-            "All" /* more items */
-          ]
-        };
-        return new Promise(function (resolve, reject) {
-          sqs
+    }).then((urls) => {
+      var params = {
+        QueueUrl: urls[0], /* required */
+        AttributeNames: ["All"]
+      };
+      return new Promise(function (resolve, reject) {
+        sqs
           .getQueueAttributes(params, function (err, data) {
             if (err) 
               reject(err)
@@ -62,32 +62,36 @@ export default class SqsViewQueues extends Component {
             console.log(data)
             resolve(data);
           });
-        });
+      });
 
-      }
-    );
+    });
 
   }
   renderQueuesList(queues) {
     //
-    return [{}]
-      .concat(queues)
-      .map((queue, i) => {
-      if(i===0) 
-      return <ListGroupItem
-      key="new"
-      href="/"
-      onClick={this.handleNoteClick}
-    >
-      No Queues Found!
-    </ListGroupItem>
-      return <ListGroupItem
-        key={queue.Attributes.QueueArn}
-        href={`/sqs/queue/${queue.QueueUrl.split("/").pop()}`}
-        onClick={this.handleQueueClick}
-        header={queue.QueueUrl.split("/").pop()}>
-      </ListGroupItem>});
-  }
+    if (queues.length === 0) 
+      return <tr key="NotFound">
+        <td>No Queues Found!</td>
+      </tr>
+    else 
+      return queues.map((queue, i) => {
+        const queueName = queue.QueueUrl.split("/").pop();
+        return  <Row className="show-grid" key={queue.Attributes.QueueArn}>
+          <Col xs={8} md={8}>
+            <Button 
+              href={`/sqs/queue/${queueName}`}
+              onClick={this.handleQueueClick}
+            >
+              {queueName}
+            </Button>
+          </Col>
+          <Col xs={1} md={1}>{queue.Attributes.ApproximateNumberOfMessages}</Col>
+          <Col xs={1} md={1}>{queue.Attributes.ApproximateNumberOfMessagesNotVisible}</Col>
+          <Col xs={1} md={1}>{queue.Attributes.ApproximateNumberOfMessagesDelayed}</Col>
+        </Row>
+
+      });
+    }
   handleQueueClick = event => {
     event.preventDefault();
     this
@@ -99,9 +103,15 @@ export default class SqsViewQueues extends Component {
     return (
       <div className="queues">
         <PageHeader>Queues</PageHeader>
-        <ListGroup>
+        <Grid>
+          <Row className="show-grid">
+            <Col xs={8} md={8}>Queue</Col>
+            <Col xs={1} md={1}>Messages</Col>
+            <Col xs={1} md={1}>Messages In Flight</Col>
+            <Col xs={1} md={1}>Messages To Be Delivered</Col>
+          </Row>
           {this.renderQueuesList(this.state.queues)}
-        </ListGroup>
+        </Grid>
       </div>
     )
   }
