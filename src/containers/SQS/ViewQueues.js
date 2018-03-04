@@ -4,7 +4,6 @@ import './ViewQueues.css';
 import AWS from 'aws-sdk';
 import config from "../../config";
 
-
 export default class SqsViewQueues extends Component {
   constructor(props) {
     super(props);
@@ -15,9 +14,12 @@ export default class SqsViewQueues extends Component {
   }
   async componentDidMount() {
     try {
-      this.getQueues();
-      //console.log(`results = ${results}`)
-      //this.setState({queues: results});
+      const results = await this.getQueues();
+      console.log(`results = ${JSON.stringify(results)}`)
+      this.setState(prevState => ({
+        queues: [...prevState.queues, results]
+      }))
+
     } catch (e) {
       alert(e);
     }
@@ -32,27 +34,59 @@ export default class SqsViewQueues extends Component {
     var params = {
       QueueNamePrefix: ''
     };
-    var self = this;
-    await sqs.listQueues(params, function (err, data) {
-      if (err) {
-        console.log(err, err.stack); // an error occurred
-      } else {
-        console.log(data)
-        console.log(data.QueueUrls)
-        
-        self.setState({queues: data.QueueUrls});
+
+    return new Promise(function (resolve, reject) {
+      sqs
+        .listQueues(params, function (err, data) {
+          if (err) 
+            reject(err)
+            console.log("get urls response")
+            console.log(data)
+          resolve(data.QueueUrls);
+        });
+    }).then(
+      (urls)=>{
+        var params = {
+          QueueUrl: urls[0], /* required */
+          AttributeNames: [
+            "All" /* more items */
+          ]
+        };
+        return new Promise(function (resolve, reject) {
+          sqs
+          .getQueueAttributes(params, function (err, data) {
+            if (err) 
+              reject(err)
+            data['QueueUrl'] = params.QueueUrl;
+            console.log("get attributes response")
+            console.log(data)
+            resolve(data);
+          });
+        });
+
       }
-    });
+    );
 
   }
   renderQueuesList(queues) {
-    return []
+    //
+    return [{}]
       .concat(queues)
-      .map((queueUrl, i) => <ListGroupItem key={queueUrl} href={`/sqs/queue/${queueUrl}`} onClick={this.handleQueueClick} 
-      //header={queueUrl}
-      >
-        {queueUrl}
-      </ListGroupItem>);
+      .map((queue, i) => {
+      if(i===0) 
+      return <ListGroupItem
+      key="new"
+      href="/"
+      onClick={this.handleNoteClick}
+    >
+      No Queues Found!
+    </ListGroupItem>
+      return <ListGroupItem
+        key={queue.Attributes.QueueArn}
+        href={`/sqs/queue/${queue.QueueUrl.split("/").pop()}`}
+        onClick={this.handleQueueClick}
+        header={queue.QueueUrl.split("/").pop()}>
+      </ListGroupItem>});
   }
   handleQueueClick = event => {
     event.preventDefault();
