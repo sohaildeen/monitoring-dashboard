@@ -49,9 +49,9 @@ export default class SqsViewQueues extends Component {
               {queueName}
             </Button>
           </Col>
-          <Col xs={2} md={1}><div class="text-center"><Badge>{queue.Attributes.ApproximateNumberOfMessagesNotVisible}</Badge></div></Col>
-          <Col xs={2} md={1}><div class="text-center"><Badge>{queue.Attributes.ApproximateNumberOfMessages}</Badge></div></Col>
-          <Col xs={2} md={1}><div class="text-center"><Badge>{queue.Attributes.ApproximateNumberOfMessagesDelayed}</Badge></div></Col>
+          <Col xs={2} md={1}><div className="text-center"><Badge>{queue.Attributes.ApproximateNumberOfMessagesNotVisible}</Badge></div></Col>
+          <Col xs={2} md={1}><div className="text-center"><Badge>{queue.Attributes.ApproximateNumberOfMessages}</Badge></div></Col>
+          <Col xs={2} md={1}><div className="text-center"><Badge>{queue.Attributes.ApproximateNumberOfMessagesDelayed}</Badge></div></Col>
         </Row>
 
       });

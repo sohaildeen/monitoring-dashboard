@@ -6,25 +6,28 @@ function Configure() {
   AWS.config.secretAccessKey = config.iamUser.SECRET_ACCESS_KEY;
   AWS.config.region = config.iamUser.REGION;
 }
+async function promiseToListQueues(sqs, queueNamePrefix) {
+  var listQueuesRequest = {
+    QueueNamePrefix: queueNamePrefix
+  };
 
-export async function getQueues() {
+  return new Promise(function (resolve, reject) {
+    sqs
+      .listQueues(listQueuesRequest, function (err, data) {
+        if (err) 
+          reject(err)
+        console.log("get urls response")
+        console.log(data)
+        resolve(data.QueueUrls);
+      });
+  })
+}
+export async function getQueues(queueNamePrefix) {
     Configure();
 
     var sqs = new AWS.SQS();
-    var params = {
-      QueueNamePrefix: ''
-    };
 
-    return await new Promise(function (resolve, reject) {
-      sqs
-        .listQueues(params, function (err, data) {
-          if (err) 
-            reject(err)
-          console.log("get urls response")
-          console.log(data)
-          resolve(data.QueueUrls);
-        });
-    })
+    return await promiseToListQueues(sqs, queueNamePrefix)
     .then((urls) => {
       const promisesStack=[];
       urls.forEach(url => {
