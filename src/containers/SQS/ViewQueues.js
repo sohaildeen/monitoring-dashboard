@@ -1,8 +1,7 @@
 import React, {Component} from 'react'
 import {PageHeader, Button, Row, Col,Badge} from "react-bootstrap";
 import './ViewQueues.css';
-import AWS from 'aws-sdk';
-import config from "../../config";
+import { getQueues } from "../../libs/aws/sqs";
 
 export default class SqsViewQueues extends Component {
   constructor(props) {
@@ -15,7 +14,7 @@ export default class SqsViewQueues extends Component {
   async componentDidMount() {
     try {
       console.log(`componentDidMount`);
-      const results = await this.getQueues();
+      const results = await getQueues();
       console.log(`results are in`);
       console.log(`results = ${JSON.stringify(results)}`)
       this.setState(prevState => ({
@@ -32,62 +31,7 @@ export default class SqsViewQueues extends Component {
     }
   }
 
-  async getQueues() {
-    AWS.config.accessKeyId = config.iamUser.ACCESS_KEY;
-    AWS.config.secretAccessKey = config.iamUser.SECRET_ACCESS_KEY;
-    AWS.config.region = config.iamUser.REGION;
-
-    var sqs = new AWS.SQS();
-    var params = {
-      QueueNamePrefix: ''
-    };
-
-    return await new Promise(function (resolve, reject) {
-      sqs
-        .listQueues(params, function (err, data) {
-          if (err) 
-            reject(err)
-          console.log("get urls response")
-          console.log(data)
-          resolve(data.QueueUrls);
-        });
-    })
-    .then((urls) => {
-      const promisesStack=[];
-      urls.forEach(url => {
-        console.log("for each url")
-        console.log(url)
-
-        var params = {
-          QueueUrl: url, 
-          AttributeNames: ["All"]
-        };
-        console.log("adding promise to array")
-        promisesStack.push( new Promise(function (resolve, reject) {
-          sqs
-            .getQueueAttributes(params, function (err, data) {
-              if (err) 
-                reject(err)
-              data['QueueUrl'] = params.QueueUrl;
-              console.log("get attributes response")
-              console.log(data)
-              resolve(data)
-            })
-        }))
-        console.log("finished adding promise to array")
-
-      });
-
-      return Promise.all(promisesStack).then(data => {
-        console.log("all promises");
-        console.log(data);
-        return data;
-      });
-          
-
-    })
-
-  }
+  
   renderQueuesList(queues) {
     //
     if (queues.length === 0) 
