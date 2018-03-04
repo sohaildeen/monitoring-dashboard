@@ -7,60 +7,64 @@ function Configure() {
   AWS.config.region = config.iamUser.REGION;
 }
 async function promiseToListQueues(sqs, queueNamePrefix) {
-  var listQueuesRequest = {
+  var params = {
     QueueNamePrefix: queueNamePrefix
   };
 
   return new Promise(function (resolve, reject) {
     sqs
-      .listQueues(listQueuesRequest, function (err, data) {
+      .listQueues(params, function (err, data) {
         if (err) 
           reject(err)
         console.log("get urls response")
         console.log(data)
         resolve(data.QueueUrls);
-      });
+      })
   })
 }
+async function promiseToGetQueueAttrbutes(sqs, urls) {
+  const promisesStack = [];
+  console.log("for each url")
+
+  urls.forEach(url => {
+    console.log(url)
+
+    var params = {
+      QueueUrl: url,
+      AttributeNames: ["All"]
+    };
+
+    console.log("starting to add promise to array")
+
+    promisesStack.push(new Promise(function (resolve, reject) {
+      sqs
+        .getQueueAttributes(params, function (err, data) {
+          if (err) 
+            reject(err)
+          data['QueueUrl'] = params.QueueUrl;
+          console.log("get attributes response")
+          console.log(data)
+          resolve(data)
+        })
+    }))
+
+    console.log("finished adding promises to array")
+
+  });
+
+  return Promise.all(promisesStack)
+
+}
 export async function getQueues(queueNamePrefix) {
-    Configure();
+  Configure();
 
-    var sqs = new AWS.SQS();
+  var sqs = new AWS.SQS();
 
-    return await promiseToListQueues(sqs, queueNamePrefix)
-    .then((urls) => {
-      const promisesStack=[];
-      urls.forEach(url => {
-        console.log("for each url")
-        console.log(url)
-
-        var params = {
-          QueueUrl: url, 
-          AttributeNames: ["All"]
-        };
-        console.log("adding promise to array")
-        promisesStack.push( new Promise(function (resolve, reject) {
-          sqs
-            .getQueueAttributes(params, function (err, data) {
-              if (err) 
-                reject(err)
-              data['QueueUrl'] = params.QueueUrl;
-              console.log("get attributes response")
-              console.log(data)
-              resolve(data)
-            })
-        }))
-        console.log("finished adding promise to array")
-
-      });
-
-      return Promise.all(promisesStack).then(data => {
-        console.log("all promises");
-        console.log(data);
-        return data;
-      });
-          
-
-    })
-
-  }
+  return await promiseToListQueues(sqs, queueNamePrefix)
+    .then(urls => promiseToGetQueueAttrbutes(sqs, urls))
+    .then(queues => {
+      console.log("all data from promises array");
+      console.log(queues);
+      return queues;
+    });
+}
