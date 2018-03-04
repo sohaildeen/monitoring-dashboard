@@ -14,14 +14,18 @@ export default class SqsViewQueues extends Component {
   }
   async componentDidMount() {
     try {
+      console.log(`componentDidMount`);
       const results = await this.getQueues();
+      console.log(`results are in`);
       console.log(`results = ${JSON.stringify(results)}`)
       this.setState(prevState => ({
         queues: [
-          ...prevState.queues,
-          results
+          ...prevState.queues.concat(results)
         ]
       }))
+      console.log("this.state.queues")
+      
+      console.log(this.state.queues)
 
     } catch (e) {
       alert(e);
@@ -38,7 +42,7 @@ export default class SqsViewQueues extends Component {
       QueueNamePrefix: ''
     };
 
-    return new Promise(function (resolve, reject) {
+    return await new Promise(function (resolve, reject) {
       sqs
         .listQueues(params, function (err, data) {
           if (err) 
@@ -47,32 +51,49 @@ export default class SqsViewQueues extends Component {
           console.log(data)
           resolve(data.QueueUrls);
         });
-    }).then((urls) => {
-      var params = {
-        QueueUrl: urls[0], /* required */
-        AttributeNames: ["All"]
-      };
-      return new Promise(function (resolve, reject) {
-        sqs
-          .getQueueAttributes(params, function (err, data) {
-            if (err) 
-              reject(err)
-            data['QueueUrl'] = params.QueueUrl;
-            console.log("get attributes response")
-            console.log(data)
-            resolve(data);
-          });
+    })
+    .then((urls) => {
+      const promisesStack=[];
+      urls.forEach(url => {
+        console.log("for each url")
+        console.log(url)
+
+        var params = {
+          QueueUrl: url, 
+          AttributeNames: ["All"]
+        };
+        console.log("adding promise to array")
+        promisesStack.push( new Promise(function (resolve, reject) {
+          sqs
+            .getQueueAttributes(params, function (err, data) {
+              if (err) 
+                reject(err)
+              data['QueueUrl'] = params.QueueUrl;
+              console.log("get attributes response")
+              console.log(data)
+              resolve(data)
+            })
+        }))
+        console.log("finished adding promise to array")
+
       });
 
-    });
+      return Promise.all(promisesStack).then(data => {
+        console.log("all promises");
+        console.log(data);
+        return data;
+      });
+          
+
+    })
 
   }
   renderQueuesList(queues) {
     //
     if (queues.length === 0) 
-      return <tr key="NotFound">
-        <td>No Queues Found!</td>
-      </tr>
+      return <Row className="show-grid" key="NotFound">
+        <Col xs={12} md={12}>No Queues Found! </Col>
+      </Row>
     else 
       return queues.map((queue, i) => {
         const queueName = queue.QueueUrl.split("/").pop();
