@@ -1,15 +1,22 @@
-.ViewQueues .queues h4 {
+.ViewQueues h1 {
   font-family: "Open Sans", sans-serif;
   font-weight: 600;
+}
+.ViewQueues a.btn {
+  font-family: "Open Sans", sans-serif;
   overflow: hidden;
   line-height: 1.5;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.ViewQueues .queues p {
-  color: #666;
-}
 
-.ViewQueues .queues .clickable {
-  cursor: pointer;
+.ViewQueues .list-container{
+  margin-left:15px;
+  margin-right:15px;
+
+}
+.ViewQueues div.show-grid {
+  padding-top:15px;
+  margin-top:15px;
+  border-top:1px solid #e7e7e7;
 }
