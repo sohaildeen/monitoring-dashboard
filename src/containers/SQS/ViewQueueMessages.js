@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import {PageHeader, Button, Row, Col,Badge} from "react-bootstrap";
+import {Row, Col} from "react-bootstrap";
 import './ViewQueueMessages.css';
 
 export default class ViewQueueMessages extends Component {
