@@ -68,3 +68,31 @@ export async function getQueues(queueNamePrefix) {
       return queues;
     });
 }
+
+export async function getMessages(queueUrl, ) {
+  Configure();
+
+  var sqs = new AWS.SQS();
+
+  var params = {
+    QueueUrl: queueUrl, 
+    AttributeNames: ["All"],
+    MaxNumberOfMessages: 10,
+    MessageAttributeNames: ['SubscriptionArn'],
+    VisibilityTimeout: 60,
+    WaitTimeSeconds: 3
+  };
+  
+  return new Promise(function(resolve,reject){
+    sqs.receiveMessage(params, function(err, data) {
+      if (err) reject(err);    // an error occurred
+      else     resolve(data);  // successful response
+    });
+  })
+
+  
+}
+
+export function name(params) {
+  
+}
